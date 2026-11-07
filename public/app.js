@@ -59,11 +59,13 @@ async function loadDashboard() {
     renderAccount(account);
     $("authPanel").classList.add("hidden"); $("hero").classList.add("hidden");
     $("dashboard").classList.remove("hidden"); $("logoutBtn").classList.remove("hidden");
+    const navCta = $("navCta"); if (navCta) { navCta.href = "#dashboard"; navCta.innerHTML = 'Mój panel <span>↗</span>'; }
     await loadPackages();
   } catch (error) {
     sessionToken = ""; localStorage.removeItem("purple_session");
     $("authPanel").classList.remove("hidden"); $("hero").classList.remove("hidden");
     $("dashboard").classList.add("hidden"); $("logoutBtn").classList.add("hidden");
+    const navCta = $("navCta"); if (navCta) { navCta.href = "#authPanel"; navCta.innerHTML = 'Panel użytkownika <span>↗</span>'; }
   }
 }
 async function createKey(regenerate = false) {
