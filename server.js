@@ -17,6 +17,8 @@ const PUBLIC_URL = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
 const JWT_SECRET = process.env.JWT_SECRET || "";
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET || "";
 const WEEKLY_TEST_TOKENS = Math.max(0, Number(process.env.WEEKLY_TEST_TOKENS || 1000));
+// Użytkownik płaci 50% szacowanego zużycia tokenów modelu.
+const CREDIT_CHARGE_RATE = 0.5;
 const PURPLE_API_URL = (process.env.PURPLE_API_URL || "").replace(/\/$/, "");
 const PURPLE_API_KEY = process.env.PURPLE_API_KEY || "";
 const TOSTHOST_API_BASE = (process.env.TOSTHOST_API_BASE || "https://my.tosthost.pl/api/v1").replace(/\/$/, "");
@@ -182,7 +184,7 @@ function estimateInputTokens(messages) {
 }
 
 function consumeCredits(userId, inputTokens, outputTokens) {
-  const total = Math.max(1, inputTokens + outputTokens);
+  const total = Math.max(1, Math.ceil((inputTokens + outputTokens) * CREDIT_CHARGE_RATE));
   const tx = db.transaction(() => {
     refreshWeeklyAllowance(userId);
     const user = db.prepare("SELECT credits FROM users WHERE id=?").get(userId);
@@ -234,7 +236,8 @@ async function handleChat(req, res) {
   }
   const inputTokens = estimateInputTokens(messages);
   const outputTokens = Math.min(512, Math.max(1, Number(req.body.max_new_tokens || 160)));
-  const cost = inputTokens + outputTokens;
+  const modelTokenEstimate = inputTokens + outputTokens;
+  const cost = Math.max(1, Math.ceil(modelTokenEstimate * CREDIT_CHARGE_RATE));
   refreshWeeklyAllowance(req.user.id);
   const current = db.prepare("SELECT credits FROM users WHERE id=?").get(req.user.id);
   if (!current || current.credits < cost) {
@@ -247,11 +250,12 @@ async function handleChat(req, res) {
     const data = await callPurple(messages, { max_new_tokens: outputTokens });
     const answer = String(data.answer ?? data.choices?.[0]?.message?.content ?? "");
     const actualOutput = Math.min(outputTokens, Math.max(1, Number(data.usage?.generated_tokens || Math.ceil(answer.length / 4))));
-    const actualCost = inputTokens + actualOutput;
+    const actualModelTokens = inputTokens + actualOutput;
+    const actualCost = Math.max(1, Math.ceil(actualModelTokens * CREDIT_CHARGE_RATE));
     if (cost > actualCost) refundCredits(req.user.id, cost - actualCost);
     db.prepare("INSERT INTO usage_log(user_id,input_tokens,output_tokens,created_at) VALUES(?,?,?,?)")
       .run(req.user.id, inputTokens, actualOutput, now());
-    return res.json({ ...data, answer, usage: { ...(data.usage || {}), input_tokens: inputTokens, output_tokens: actualOutput, total_tokens: actualCost, remaining_credits: getAccount(req.user.id).credits } });
+    return res.json({ ...data, answer, usage: { ...(data.usage || {}), input_tokens: inputTokens, output_tokens: actualOutput, total_tokens: actualModelTokens, credits_charged: actualCost, remaining_credits: getAccount(req.user.id).credits } });
   } catch (error) {
     refundCredits(req.user.id, cost);
     return res.status(error.status || 502).json({ error: error.message || "Błąd połączenia z Purple AI." });
