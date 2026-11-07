@@ -48,6 +48,8 @@ function renderAccount(account) {
   $("keyPrefix").textContent = account.api_key ? account.api_key.key_prefix + "••••••••••" : "Nie utworzono tokenu";
   $("createKeyBtn").classList.toggle("hidden", Boolean(account.api_key));
   $("statRenewal").textContent = new Date(account.next_weekly_at * 1000).toLocaleDateString("pl-PL");
+  $("usageInput").textContent = Number(account.usage_30d?.input || 0).toLocaleString("pl-PL");
+  $("usageOutput").textContent = Number(account.usage_30d?.output || 0).toLocaleString("pl-PL");
 }
 async function loadDashboard() {
   try {
@@ -116,6 +118,8 @@ $("chatForm").addEventListener("submit", async (event) => {
   try {
     const data = await request("/api/chat", { method: "POST", body: JSON.stringify({ messages: [{ role: "user", content: text }], max_new_tokens: 160 }) });
     pending.textContent = data.answer || "Model zwrócił pustą odpowiedź.";
+    if (data.usage?.input_tokens !== undefined) $("usageInput").textContent = (Number(currentAccount?.usage_30d?.input || 0) + Number(data.usage.input_tokens)).toLocaleString("pl-PL");
+    if (data.usage?.output_tokens !== undefined) $("usageOutput").textContent = (Number(currentAccount?.usage_30d?.output || 0) + Number(data.usage.output_tokens)).toLocaleString("pl-PL");
     if (data.usage?.remaining_credits !== undefined) {
       $("creditCount").textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL");
       $("statCredits").textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL");
@@ -129,3 +133,18 @@ if (new URLSearchParams(location.search).get("verified") === "1") showMessage("a
 if (new URLSearchParams(location.search).get("payment") === "success") showMessage("authMessage", "Płatność została przekazana do weryfikacji. Saldo zaktualizuje się po potwierdzeniu TostHost.");
 if (new URLSearchParams(location.search).get("payment") === "cancelled") showMessage("authMessage", "Płatność została anulowana.");
 if (sessionToken) loadDashboard();
+
+const copyExampleButton = $("copyExampleBtn");
+if (copyExampleButton) copyExampleButton.addEventListener("click", async () => {
+  const example = JSON.stringify({
+    messages: [{ role: "user", content: "Cześć Purple AI!" }],
+    max_new_tokens: 160
+  }, null, 2);
+  try {
+    await navigator.clipboard.writeText(example);
+    copyExampleButton.textContent = "Skopiowano ✓";
+    setTimeout(() => { copyExampleButton.textContent = "Kopiuj przykład"; }, 1800);
+  } catch {
+    copyExampleButton.textContent = "Nie udało się skopiować";
+  }
+});
