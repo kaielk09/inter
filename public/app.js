@@ -118,8 +118,14 @@ $("chatForm").addEventListener("submit", async (event) => {
   try {
     const data = await request("/api/chat", { method: "POST", body: JSON.stringify({ messages: [{ role: "user", content: text }], max_new_tokens: 160 }) });
     pending.textContent = data.answer || "Model zwrócił pustą odpowiedź.";
-    if (data.usage?.input_tokens !== undefined) $("usageInput").textContent = (Number(currentAccount?.usage_30d?.input || 0) + Number(data.usage.input_tokens)).toLocaleString("pl-PL");
-    if (data.usage?.output_tokens !== undefined) $("usageOutput").textContent = (Number(currentAccount?.usage_30d?.output || 0) + Number(data.usage.output_tokens)).toLocaleString("pl-PL");
+    if (data.usage?.input_tokens !== undefined) {
+      currentAccount.usage_30d.input = Number(currentAccount.usage_30d.input || 0) + Number(data.usage.input_tokens);
+      $("usageInput").textContent = currentAccount.usage_30d.input.toLocaleString("pl-PL");
+    }
+    if (data.usage?.output_tokens !== undefined) {
+      currentAccount.usage_30d.output = Number(currentAccount.usage_30d.output || 0) + Number(data.usage.output_tokens);
+      $("usageOutput").textContent = currentAccount.usage_30d.output.toLocaleString("pl-PL");
+    }
     if (data.usage?.remaining_credits !== undefined) {
       $("creditCount").textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL");
       $("statCredits").textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL");
