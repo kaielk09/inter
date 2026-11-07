@@ -43,6 +43,8 @@ function renderAccount(account) {
   currentAccount = account;
   $("userEmail").textContent = account.email;
   $("creditCount").textContent = Number(account.credits).toLocaleString("pl-PL");
+  const topCounter = $("topTokenCounter");
+  if (topCounter) { topCounter.textContent = Number(account.credits).toLocaleString("pl-PL") + " tokenów"; topCounter.classList.remove("hidden"); }
   $("statCredits").textContent = Number(account.credits).toLocaleString("pl-PL");
   $("statKey").textContent = account.api_key ? "Aktywny" : "Brak";
   $("keyPrefix").textContent = account.api_key ? account.api_key.key_prefix + "••••••••••" : "Nie utworzono tokenu";
@@ -129,6 +131,8 @@ $("chatForm").addEventListener("submit", async (event) => {
     if (data.usage?.remaining_credits !== undefined) {
       $("creditCount").textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL");
       $("statCredits").textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL");
+      const topCounter = $("topTokenCounter");
+      if (topCounter) topCounter.textContent = Number(data.usage.remaining_credits).toLocaleString("pl-PL") + " tokenów";
     }
   } catch (error) { pending.textContent = error.message; pending.style.borderColor = "#a64c62"; }
   $("chatMessages").scrollTop = $("chatMessages").scrollHeight;
