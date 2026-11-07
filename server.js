@@ -9,7 +9,6 @@ const rateLimit = require("express-rate-limit");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Database = require("better-sqlite3");
-const nodemailer = require("nodemailer");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -113,19 +112,32 @@ app.use(express.urlencoded({ extended: false, limit: "20kb" }));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }));
 app.use("/api", rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true, legacyHeaders: false }));
 
-const smtpConfigured = Boolean(
-  process.env.SMTP_HOST &&
-  process.env.SMTP_USER &&
-  process.env.SMTP_PASS
-);
-const transporter = smtpConfigured
-  ? nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: String(process.env.SMTP_SECURE || "false").toLowerCase() === "true",
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-    })
-  : null;
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const RESEND_FROM = process.env.RESEND_FROM || "INTER <onboarding@resend.dev>";
+
+async function sendVerificationEmail(to, verifyUrl) {
+  if (!RESEND_API_KEY) throw new Error("Brak RESEND_API_KEY.");
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + RESEND_API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: RESEND_FROM,
+      to: [to],
+      subject: "Potwierdź adres e-mail — INTER",
+      text: "Aby aktywować konto INTER, otwórz link: " + verifyUrl + "\\nLink jest ważny przez 24 godziny."
+    }),
+    signal: AbortSignal.timeout(20000)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.error("Resend API error:", response.status, data);
+    throw new Error(data.message || data.error || "Resend nie wysłał wiadomości.");
+  }
+  return data;
+}
 
 const now = () => Math.floor(Date.now() / 1000);
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
@@ -274,7 +286,7 @@ app.post("/api/auth/register", async (req, res) => {
     return res.status(400).json({ error: "Podaj poprawny adres e-mail." });
   if (password.length < 10 || password.length > 128)
     return res.status(400).json({ error: "Hasło musi mieć od 10 do 128 znaków." });
-  if (!transporter) return res.status(503).json({ error: "Administrator musi skonfigurować SMTP (SMTP_HOST, SMTP_USER i SMTP_PASS), aby włączyć rejestrację." });
+  if (!RESEND_API_KEY) return res.status(503).json({ error: "Administrator musi dodać RESEND_API_KEY, aby włączyć rejestrację." });
   if (db.prepare("SELECT id FROM users WHERE email=?").get(email))
     return res.status(409).json({ error: "Konto z tym adresem e-mail już istnieje." });
 
@@ -286,12 +298,7 @@ app.post("/api/auth/register", async (req, res) => {
       .run(email, passwordHash, sha256(verifyToken), timestamp + 86400, WEEKLY_TEST_TOKENS, timestamp + 7 * 86400, timestamp);
     const baseUrl = PUBLIC_URL || (req.protocol + "://" + req.get("host"));
     const verifyUrl = baseUrl + "/api/auth/verify?token=" + encodeURIComponent(verifyToken);
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || "Purple AI <noreply@localhost>",
-      to: email,
-      subject: "Potwierdź adres e-mail — Purple AI",
-      text: "Aby aktywować konto Purple AI, otwórz link: " + verifyUrl + "\nLink jest ważny przez 24 godziny."
-    });
+    await sendVerificationEmail(email, verifyUrl);
     return res.status(201).json({ message: "Wysłaliśmy link aktywacyjny na Twój e-mail." });
   } catch (error) {
     console.error("Registration/email error:", error.message);
