@@ -18,7 +18,7 @@
     <nav class="main-nav" aria-label="Główna nawigacja">
       <a href="#features">Możliwości</a><a href="#how">Jak działa</a><a href="#docs">Dokumentacja</a>
     </nav>
-    <div class="top-actions"><span class="status-dot"></span><span class="status-label">Purple AI API</span><button id="logoutBtn" class="button-quiet hidden">Wyloguj</button><a class="nav-cta" href="#authPanel">Panel użytkownika <span>↗</span></a></div>
+    <div class="top-actions"><span class="status-dot"></span><span class="status-label">Purple AI API</span><span id="topTokenCounter" class="top-token-counter hidden">0 tokenów</span><button id="logoutBtn" class="button-quiet hidden">Wyloguj</button><a class="nav-cta" href="#authPanel">Panel użytkownika <span>↗</span></a></div>
   </header>
 
   <main>
@@ -83,7 +83,7 @@
     </section>
 
     <section id="docs" class="content-section docs-section">
-      <div class="docs-copy"><div class="eyebrow">DLA PROGRAMISTÓW</div><h2>Gotowe do integracji.</h2><p>Użyj swojego tokenu w nagłówku Authorization i wysyłaj wiadomości do endpointu API.</p><div class="docs-note"><span>i</span><p>Nie umieszczaj tokenu API w publicznym kodzie strony ani repozytorium. Przechowuj go po stronie serwera.</p></div></div>
+      <div class="docs-copy"><div class="eyebrow">DLA PROGRAMISTÓW</div><h2>Jak utworzyć i używać API?</h2><p>1. Załóż konto i potwierdź e-mail. 2. Zaloguj się do panelu. 3. Kliknij „Utwórz token” i skopiuj go — pełny klucz wyświetla się tylko raz. 4. Wstaw token do nagłówka Authorization jako Bearer i wysyłaj zapytania na /v1/chat.</p><div class="docs-note"><span>i</span><p>Nie umieszczaj tokenu API w publicznym kodzie strony ani repozytorium. Przechowuj go po stronie serwera.</p></div></div>
       <div class="code-card"><div class="code-head"><span><i></i><i></i><i></i> request.json</span><button id="copyExampleBtn" class="copy-button" type="button">Kopiuj przykład</button></div><pre><code>{
   "messages": [
     {
@@ -92,7 +92,7 @@
     }
   ],
   "max_new_tokens": 160
-}</code></pre><div class="code-foot"><span>POST /v1/chat</span><span>application/json</span></div></div>
+}</code></pre><div class="code-foot"><span>POST /v1/chat</span><span>Authorization: Bearer TWÓJ_TOKEN</span></div></div>
     </section>
 
     <section id="dashboard" class="dashboard hidden">
