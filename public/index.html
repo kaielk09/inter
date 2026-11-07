@@ -18,7 +18,7 @@
     <nav class="main-nav" aria-label="Główna nawigacja">
       <a href="#features">Możliwości</a><a href="#how">Jak działa</a><a href="#docs">Dokumentacja</a>
     </nav>
-    <div class="top-actions"><span class="status-dot"></span><span class="status-label">Purple AI API</span><span id="topTokenCounter" class="top-token-counter hidden">0 tokenów</span><button id="logoutBtn" class="button-quiet hidden">Wyloguj</button><a class="nav-cta" href="#authPanel">Panel użytkownika <span>↗</span></a></div>
+    <div class="top-actions"><span class="status-dot"></span><span class="status-label">Purple AI API</span><span id="topTokenCounter" class="top-token-counter hidden">0 tokenów</span><button id="logoutBtn" class="button-quiet hidden">Wyloguj</button><a id="navCta" class="nav-cta" href="#authPanel">Panel użytkownika <span>↗</span></a></div>
   </header>
 
   <main>
@@ -59,11 +59,11 @@
             <label>Adres e-mail<input name="email" type="email" autocomplete="email" placeholder="np. ty@email.com" required></label>
             <label>Hasło<input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="Minimum 10 znaków" required></label>
             <button class="button-primary full" type="submit">Utwórz konto <span>→</span></button>
-            <p class="fine-print">Wyślemy Ci link aktywacyjny na podany adres e-mail.</p>
+            <p class="fine-print">W trybie testowym nie trzeba potwierdzać adresu e-mail.</p>
           </form>
           <div id="authMessage" class="message" aria-live="polite"></div>
         </div>
-        <aside class="auth-aside"><div class="aside-icon">✧</div><div class="eyebrow">WSZYSTKO W JEDNYM MIEJSCU</div><h3>Prosty dostęp do Twojego AI.</h3><p>Jeden token użytkownika łączy Twoje projekty ze wspólnym API Purple AI. Klucz głównego serwera pozostaje bezpieczny.</p><div class="aside-list"><div><span>01</span><b>Utwórz konto</b><small>Aktywuj e-mail i zaloguj się.</small></div><div><span>02</span><b>Wygeneruj token</b><small>Twój prywatny klucz API.</small></div><div><span>03</span><b>Buduj swoje projekty</b><small>Korzystaj z Purple AI w aplikacjach.</small></div></div></aside>
+        <aside class="auth-aside"><div class="aside-icon">✧</div><div class="eyebrow">WSZYSTKO W JEDNYM MIEJSCU</div><h3>Prosty dostęp do Twojego AI.</h3><p>Jeden token użytkownika łączy Twoje projekty ze wspólnym API Purple AI. Klucz głównego serwera pozostaje bezpieczny.</p><div class="aside-list"><div><span>01</span><b>Utwórz konto</b><small>Zaloguj się do swojego konta.</small></div><div><span>02</span><b>Wygeneruj token</b><small>Twój prywatny klucz API.</small></div><div><span>03</span><b>Buduj swoje projekty</b><small>Korzystaj z Purple AI w aplikacjach.</small></div></div></aside>
       </div>
     </section>
 
@@ -79,11 +79,11 @@
 
     <section id="how" class="content-section how-section">
       <div class="section-heading"><div class="eyebrow">JAK TO DZIAŁA</div><h2>Od konta do API w 3 krokach.</h2></div>
-      <div class="steps"><div class="step"><span>01</span><h3>Rejestracja</h3><p>Załóż konto i potwierdź adres e-mail.</p></div><div class="step"><span>02</span><h3>Token API</h3><p>Wygeneruj prywatny klucz dostępu w panelu.</p></div><div class="step"><span>03</span><h3>Integracja</h3><p>Wysyłaj zapytania do endpointu Purple AI.</p></div></div>
+      <div class="steps"><div class="step"><span>01</span><h3>Rejestracja</h3><p>Załóż konto i zaloguj się.</p></div><div class="step"><span>02</span><h3>Token API</h3><p>Wygeneruj prywatny klucz dostępu w panelu.</p></div><div class="step"><span>03</span><h3>Integracja</h3><p>Wysyłaj zapytania do endpointu Purple AI.</p></div></div>
     </section>
 
     <section id="docs" class="content-section docs-section">
-      <div class="docs-copy"><div class="eyebrow">DLA PROGRAMISTÓW</div><h2>Jak utworzyć i używać API?</h2><p>1. Załóż konto i potwierdź e-mail. 2. Zaloguj się do panelu. 3. Kliknij „Utwórz token” i skopiuj go — pełny klucz wyświetla się tylko raz. 4. Wstaw token do nagłówka Authorization jako Bearer i wysyłaj zapytania na /v1/chat.</p><div class="docs-note"><span>i</span><p>Nie umieszczaj tokenu API w publicznym kodzie strony ani repozytorium. Przechowuj go po stronie serwera.</p></div></div>
+      <div class="docs-copy"><div class="eyebrow">DLA PROGRAMISTÓW</div><h2>Jak utworzyć i używać API?</h2><p>1. Załóż konto i zaloguj się. 2. Otwórz panel użytkownika. 3. Kliknij „Utwórz token” i skopiuj go — pełny klucz wyświetla się tylko raz. 4. Wstaw token do nagłówka Authorization jako Bearer i wysyłaj zapytania na /v1/chat.</p><div class="docs-note"><span>i</span><p>Nie umieszczaj tokenu API w publicznym kodzie strony ani repozytorium. Przechowuj go po stronie serwera.</p></div></div>
       <div class="code-card"><div class="code-head"><span><i></i><i></i><i></i> request.json</span><button id="copyExampleBtn" class="copy-button" type="button">Kopiuj przykład</button></div><pre><code>{
   "messages": [
     {
