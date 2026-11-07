@@ -402,14 +402,16 @@ app.post("/api/payments/webhook", async (req, res) => {
     });
     const statusData = await response.json().catch(() => ({}));
     if (!response.ok) return res.sendStatus(502);
-    if (String(statusData.status || "").toUpperCase() !== "PAID") {
-      db.prepare("UPDATE purchases SET status=? WHERE id=?").run(String(statusData.status || "UNKNOWN").toUpperCase(), purchase.id);
+    const verifiedTransaction = statusData.data || statusData.transaction || statusData;
+    const verifiedStatus = String(verifiedTransaction.status || "").toUpperCase();
+    if (verifiedStatus !== "PAID") {
+      db.prepare("UPDATE purchases SET status=? WHERE id=?").run(verifiedStatus || "UNKNOWN", purchase.id);
       return res.sendStatus(200);
     }
-    if (statusData.customReference && statusData.customReference !== reference) return res.sendStatus(400);
-    if (statusData.isSandbox === true && !TOSTHOST_SANDBOX) return res.sendStatus(400);
-    if (statusData.amount !== undefined && Number(statusData.amount) !== Number(purchase.amount)) return res.sendStatus(400);
-    if (statusData.currency && String(statusData.currency).toUpperCase() !== "PLN") return res.sendStatus(400);
+    if (verifiedTransaction.customReference && verifiedTransaction.customReference !== reference) return res.sendStatus(400);
+    if (verifiedTransaction.isSandbox === true && !TOSTHOST_SANDBOX) return res.sendStatus(400);
+    if (verifiedTransaction.amount !== undefined && Number(verifiedTransaction.amount) !== Number(purchase.amount)) return res.sendStatus(400);
+    if (verifiedTransaction.currency && String(verifiedTransaction.currency).toUpperCase() !== "PLN") return res.sendStatus(400);
 
     const tx = db.transaction(() => {
       const current = db.prepare("SELECT status FROM purchases WHERE id=?").get(purchase.id);
