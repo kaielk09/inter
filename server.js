@@ -112,6 +112,7 @@ app.use(express.urlencoded({ extended: false, limit: "20kb" }));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }));
 app.use("/api", rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true, legacyHeaders: false }));
 
+const REQUIRE_EMAIL_VERIFICATION = String(process.env.REQUIRE_EMAIL_VERIFICATION || "false").toLowerCase() === "true";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const RESEND_FROM = process.env.RESEND_FROM || "INTER <onboarding@resend.dev>";
 
@@ -155,7 +156,7 @@ function auth(req, res, next) {
   try {
     const payload = jwt.verify(raw, JWT_SECRET);
     const user = db.prepare("SELECT id,email,verified,credits,next_weekly_at FROM users WHERE id=?").get(payload.sub);
-    if (!user || !user.verified) return res.status(401).json({ error: "Konto nie istnieje lub nie jest zweryfikowane." });
+    if (!user || (REQUIRE_EMAIL_VERIFICATION && !user.verified)) return res.status(401).json({ error: "Konto nie istnieje lub nie jest zweryfikowane." });
     req.user = user;
     next();
   } catch {
@@ -169,7 +170,7 @@ function apiKeyAuth(req, res, next) {
   const record = db.prepare("SELECT user_id,key_hash FROM api_keys WHERE key_prefix=?").get(raw.slice(0, 15));
   if (!record || !safeEqual(record.key_hash, sha256(raw))) return res.status(401).json({ error: "Nieprawidłowy token Purple AI." });
   const user = db.prepare("SELECT id,email,verified,credits,next_weekly_at FROM users WHERE id=?").get(record.user_id);
-  if (!user || !user.verified) return res.status(401).json({ error: "Konto nieaktywne." });
+  if (!user || (REQUIRE_EMAIL_VERIFICATION && !user.verified)) return res.status(401).json({ error: "Konto nieaktywne." });
   req.user = user;
   next();
 }
@@ -286,23 +287,30 @@ app.post("/api/auth/register", async (req, res) => {
     return res.status(400).json({ error: "Podaj poprawny adres e-mail." });
   if (password.length < 10 || password.length > 128)
     return res.status(400).json({ error: "Hasło musi mieć od 10 do 128 znaków." });
-  if (!RESEND_API_KEY) return res.status(503).json({ error: "Administrator musi dodać RESEND_API_KEY, aby włączyć rejestrację." });
+  if (REQUIRE_EMAIL_VERIFICATION && !RESEND_API_KEY)
+    return res.status(503).json({ error: "Administrator musi dodać RESEND_API_KEY, aby włączyć weryfikację e-mail." });
   if (db.prepare("SELECT id FROM users WHERE email=?").get(email))
     return res.status(409).json({ error: "Konto z tym adresem e-mail już istnieje." });
 
   const timestamp = now();
-  const verifyToken = makeToken(32);
+  const verifyToken = REQUIRE_EMAIL_VERIFICATION ? makeToken(32) : null;
   const passwordHash = await bcrypt.hash(password, 12);
   try {
-    const info = db.prepare("INSERT INTO users(email,password_hash,verified,verify_hash,verify_expires,credits,next_weekly_at,created_at) VALUES(?,?,0,?,?,?, ?,?)")
-      .run(email, passwordHash, sha256(verifyToken), timestamp + 86400, WEEKLY_TEST_TOKENS, timestamp + 7 * 86400, timestamp);
-    const baseUrl = PUBLIC_URL || (req.protocol + "://" + req.get("host"));
-    const verifyUrl = baseUrl + "/api/auth/verify?token=" + encodeURIComponent(verifyToken);
-    await sendVerificationEmail(email, verifyUrl);
-    return res.status(201).json({ message: "Wysłaliśmy link aktywacyjny na Twój e-mail." });
+    db.prepare("INSERT INTO users(email,password_hash,verified,verify_hash,verify_expires,credits,next_weekly_at,created_at) VALUES(?,?,?,?,?,?,?,?)")
+      .run(email, passwordHash, REQUIRE_EMAIL_VERIFICATION ? 0 : 1,
+        verifyToken ? sha256(verifyToken) : null,
+        verifyToken ? timestamp + 86400 : null,
+        WEEKLY_TEST_TOKENS, timestamp + 7 * 86400, timestamp);
+    if (REQUIRE_EMAIL_VERIFICATION) {
+      const baseUrl = PUBLIC_URL || (req.protocol + "://" + req.get("host"));
+      const verifyUrl = baseUrl + "/api/auth/verify?token=" + encodeURIComponent(verifyToken);
+      await sendVerificationEmail(email, verifyUrl);
+      return res.status(201).json({ message: "Wysłaliśmy link aktywacyjny na Twój e-mail." });
+    }
+    return res.status(201).json({ message: "Konto utworzone. W trybie testowym potwierdzenie e-mail nie jest wymagane — możesz się zalogować." });
   } catch (error) {
-    console.error("Registration/email error:", error.message);
-    return res.status(500).json({ error: "Nie udało się utworzyć konta lub wysłać wiadomości." });
+    console.error("Registration error:", error.message);
+    return res.status(500).json({ error: "Nie udało się utworzyć konta." });
   }
 });
 
@@ -323,7 +331,7 @@ app.post("/api/auth/login", async (req, res) => {
   const user = db.prepare("SELECT * FROM users WHERE email=?").get(email);
   if (!user || !(await bcrypt.compare(password, user.password_hash)))
     return res.status(401).json({ error: "Nieprawidłowy e-mail lub hasło." });
-  if (!user.verified) return res.status(403).json({ error: "Najpierw potwierdź adres e-mail." });
+  if (REQUIRE_EMAIL_VERIFICATION && !user.verified) return res.status(403).json({ error: "Najpierw potwierdź adres e-mail." });
   const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: "7d" });
   return res.json({ token, account: getAccount(user.id) });
 });
