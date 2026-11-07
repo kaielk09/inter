@@ -127,7 +127,7 @@ async function sendVerificationEmail(to, verifyUrl) {
       from: RESEND_FROM,
       to: [to],
       subject: "Potwierdź adres e-mail — INTER",
-      text: "Aby aktywować konto INTER, otwórz link: " + verifyUrl + "\\nLink jest ważny przez 24 godziny."
+      text: "Aby aktywować konto INTER, otwórz link: " + verifyUrl + "\nLink jest ważny przez 24 godziny."
     }),
     signal: AbortSignal.timeout(20000)
   });
