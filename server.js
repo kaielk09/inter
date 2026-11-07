@@ -113,7 +113,12 @@ app.use(express.urlencoded({ extended: false, limit: "20kb" }));
 app.use("/api/auth", rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false }));
 app.use("/api", rateLimit({ windowMs: 60 * 1000, limit: 120, standardHeaders: true, legacyHeaders: false }));
 
-const transporter = process.env.SMTP_HOST && process.env.SMTP_USER
+const smtpConfigured = Boolean(
+  process.env.SMTP_HOST &&
+  process.env.SMTP_USER &&
+  process.env.SMTP_PASS
+);
+const transporter = smtpConfigured
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
@@ -269,7 +274,7 @@ app.post("/api/auth/register", async (req, res) => {
     return res.status(400).json({ error: "Podaj poprawny adres e-mail." });
   if (password.length < 10 || password.length > 128)
     return res.status(400).json({ error: "Hasło musi mieć od 10 do 128 znaków." });
-  if (!transporter) return res.status(503).json({ error: "Rejestracja wymaga konfiguracji poczty SMTP na serwerze." });
+  if (!transporter) return res.status(503).json({ error: "Administrator musi skonfigurować SMTP (SMTP_HOST, SMTP_USER i SMTP_PASS), aby włączyć rejestrację." });
   if (db.prepare("SELECT id FROM users WHERE email=?").get(email))
     return res.status(409).json({ error: "Konto z tym adresem e-mail już istnieje." });
 
@@ -279,7 +284,8 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const info = db.prepare("INSERT INTO users(email,password_hash,verified,verify_hash,verify_expires,credits,next_weekly_at,created_at) VALUES(?,?,0,?,?,?, ?,?)")
       .run(email, passwordHash, sha256(verifyToken), timestamp + 86400, WEEKLY_TEST_TOKENS, timestamp + 7 * 86400, timestamp);
-    const verifyUrl = PUBLIC_URL + "/api/auth/verify?token=" + encodeURIComponent(verifyToken);
+    const baseUrl = PUBLIC_URL || (req.protocol + "://" + req.get("host"));
+    const verifyUrl = baseUrl + "/api/auth/verify?token=" + encodeURIComponent(verifyToken);
     await transporter.sendMail({
       from: process.env.EMAIL_FROM || "Purple AI <noreply@localhost>",
       to: email,
