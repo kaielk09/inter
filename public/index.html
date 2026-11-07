@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#09090f">
+  <title>Purple AI — Twoje centrum AI</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="/"><span class="brand-mark">P</span><span>PURPLE<span class="muted"> AI</span></span></a>
+    <div class="top-actions"><span class="status-dot"></span><span class="small-muted">Model API</span><button id="logoutBtn" class="ghost hidden">Wyloguj</button></div>
+  </header>
+
+  <main>
+    <section id="hero" class="hero">
+      <div class="eyebrow"><span class="spark"></span> JEDNO API · WIELE MOŻLIWOŚCI</div>
+      <h1>Twoje AI.<br><span class="gradient-text">Twoje zasady.</span></h1>
+      <p class="hero-copy">Jedno konto Purple AI, jeden token API i prosty system zużycia tokenów. Podłącz własne aplikacje do wspólnego modelu Purple AI.</p>
+      <div class="hero-points"><span>✦ Tygodniowe tokeny testowe</span><span>✦ Dodatkowe pakiety</span><span>✦ Panel API</span></div>
+    </section>
+
+    <section id="authPanel" class="auth-layout">
+      <div class="auth-card">
+        <div class="tabs"><button class="tab active" data-tab="login">Logowanie</button><button class="tab" data-tab="register">Rejestracja</button></div>
+        <form id="loginForm" class="auth-form">
+          <label>E-mail<input name="email" type="email" autocomplete="email" placeholder="twoj@email.pl" required></label>
+          <label>Hasło<input name="password" type="password" autocomplete="current-password" placeholder="Twoje hasło" required></label>
+          <button class="primary-btn" type="submit">Zaloguj się <span>→</span></button>
+        </form>
+        <form id="registerForm" class="auth-form hidden">
+          <label>E-mail<input name="email" type="email" autocomplete="email" placeholder="twoj@email.pl" required></label>
+          <label>Hasło<input name="password" type="password" minlength="10" autocomplete="new-password" placeholder="Minimum 10 znaków" required></label>
+          <button class="primary-btn" type="submit">Utwórz konto <span>→</span></button>
+          <p class="fine-print">Na podany adres wyślemy link aktywacyjny.</p>
+        </form>
+        <div id="authMessage" class="message" aria-live="polite"></div>
+      </div>
+      <aside class="feature-card"><div class="feature-icon">✧</div><h2>Wszystko w jednym miejscu</h2><p>Zarządzaj dostępem do modelu bez ujawniania głównego klucza serwera.</p><div class="mini-line"></div><div class="feature-row"><span>Token API</span><strong>1 na konto</strong></div><div class="feature-row"><span>Testy</span><strong>Co 7 dni</strong></div><div class="feature-row"><span>Model</span><strong>Purple AI V1.0</strong></div></aside>
+    </section>
+
+    <section id="dashboard" class="dashboard hidden">
+      <div class="dash-heading"><div><div class="eyebrow">PANEL UŻYTKOWNIKA</div><h2>Witaj w Purple AI</h2><p id="userEmail" class="small-muted"></p></div><div class="credit-pill"><span class="status-dot"></span><span id="creditCount">0</span><small>tokenów</small></div></div>
+      <div class="stat-grid">
+        <article class="stat-card"><span class="stat-label">Dostępne tokeny</span><strong id="statCredits">0</strong><small>Saldo konta</small></article>
+        <article class="stat-card"><span class="stat-label">Token API</span><strong id="statKey">Brak</strong><small>Jeden aktywny token</small></article>
+        <article class="stat-card"><span class="stat-label">Odnowienie testów</span><strong id="statRenewal">—</strong><small>Pakiet co 7 dni</small></article>
+      </div>
+      <div class="dash-grid">
+        <section class="panel">
+          <div class="panel-head"><div><div class="eyebrow">DOSTĘP DO API</div><h3>Twój token API</h3></div><span class="lock">⌑</span></div>
+          <p class="small-muted">Używaj go w swoich aplikacjach. Nie udostępniaj go publicznie.</p>
+          <div id="keyArea" class="key-area"><span id="keyPrefix">Nie utworzono tokenu</span><button id="createKeyBtn" class="primary-btn compact">Utwórz token</button></div>
+          <div class="button-row"><button id="regenKeyBtn" class="secondary-btn">Wygeneruj nowy</button><button id="revokeKeyBtn" class="ghost danger">Unieważnij</button></div>
+          <p class="fine-print">Pełny token pokażemy tylko raz podczas tworzenia.</p>
+        </section>
+        <section class="panel">
+          <div class="panel-head"><div><div class="eyebrow">DODATKOWE TOKENY</div><h3>Doładuj konto</h3></div><span class="lock">＋</span></div>
+          <div id="packages" class="packages"><p class="small-muted">Pakiety zostaną pokazane po konfiguracji cen.</p></div>
+          <p class="fine-print">Płatności obsługuje TostHost. Tokeny dodawane są dopiero po potwierdzeniu płatności przez serwer.</p>
+        </section>
+      </div>
+      <section class="panel chat-panel">
+        <div class="panel-head"><div><div class="eyebrow">SZYBKI TEST</div><h3>Porozmawiaj z Purple AI</h3></div><span class="model-tag">PURPLE AI V1.0</span></div>
+        <div id="chatMessages" class="chat-messages"><div class="bubble assistant">Cześć! Jestem Purple AI. Napisz wiadomość, aby przetestować połączenie z modelem.</div></div>
+        <form id="chatForm" class="chat-form"><input id="chatInput" placeholder="Napisz wiadomość..." maxlength="4000" required><button class="primary-btn" type="submit">Wyślij ↑</button></form>
+      </section>
+      <div id="dashMessage" class="message" aria-live="polite"></div>
+    </section>
+  </main>
+  <footer><span>© 2026 Purple AI</span><span>Powered by Purple AI API</span></footer>
+</body>
+</html>
